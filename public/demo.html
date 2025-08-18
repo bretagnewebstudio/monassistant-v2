@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Demo Site - Test MonAssistant</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 40px;
+      background: #f0f0f0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    p { line-height: 1.6; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚗 Garage Martin</h1>
+    <h2>Votre garage de confiance depuis 1990</h2>
+    
+    <p>Bienvenue sur le site du Garage Martin. Nous sommes spécialisés dans la vente de véhicules d'occasion et les services de réparation.</p>
+    
+    <h3>Nos services :</h3>
+    <ul>
+      <li>Vente de véhicules d'occasion toutes marques</li>
+      <li>Révision et entretien</li>
+      <li>Réparation mécanique</li>
+      <li>Carrosserie et peinture</li>
+    </ul>
+    
+    <p>MonAssistant Pro est intégré sur cette page. Cliquez sur le bouton en bas à droite pour accéder à notre système de gestion !</p>
+  </div>
+  
+  <!-- INTÉGRATION MONASSISTANT EN 2 LIGNES ! -->
+  <script src="/widget.js"></script>
+  <script>
+    MonAssistantWidget.init({
+      client: 'garage-martin',
+      modules: ['vehicules', 'services', 'dashboard'],
+      color: '#3b82f6',
+      text: 'MonAssistant Pro',
+      position: 'bottom-right',
+      url: 'http://localhost:3000/embed'
+    });
+  </script>
+</body>
+</html>
