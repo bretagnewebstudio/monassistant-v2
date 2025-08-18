@@ -14,11 +14,17 @@ interface Actualite {
 export default function ActualitesModule() {
   const [actualites, setActualites] = useState<Actualite[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    titre: string
+    contenu: string
+    image: string
+    categorie: 'Promotion' | 'Nouveauté' | 'Info' | 'Événement'
+    publie: boolean
+  }>({
     titre: '',
     contenu: '',
     image: '',
-    categorie: 'Info' as const,
+    categorie: 'Info',
     publie: true
   })
 
@@ -131,7 +137,7 @@ export default function ActualitesModule() {
                   <label className="block text-sm font-medium mb-1">Catégorie</label>
                   <select 
                     value={formData.categorie}
-                    onChange={(e) => setFormData({...formData, categorie: e.target.value as any})}
+                    onChange={(e) => setFormData({...formData, categorie: e.target.value as 'Promotion' | 'Nouveauté' | 'Info' | 'Événement'})}
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="Info">ℹ️ Information</option>

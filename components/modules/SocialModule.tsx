@@ -7,7 +7,7 @@ interface Post {
   reseaux: string[]
   type: 'vehicule' | 'promotion' | 'conseil' | 'avis' | 'actualite' | 'evenement'
   date: string
-  statut: 'brouillon' | 'publie'
+  statut: 'Brouillon' | 'Programmé' | 'Publié'
   hashtags?: string[]
   image?: string
 }
@@ -60,7 +60,7 @@ export default function SocialModule() {
       reseaux: reseaux,
       type: generatorType === 'vehicule' ? 'vehicule' : generatorType === 'promo' ? 'promotion' : 'conseil',
       contenu: generatedContent,
-      statut: 'brouillon',
+      statut: 'Publié',
       date: new Date().toLocaleDateString(),
       hashtags: extractHashtags(generatedContent)
     }
@@ -170,7 +170,7 @@ export default function SocialModule() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h2 className="text-2xl font-bold">📱 Réseaux Sociaux</h2>
-          <p className="text-gray-600 text-sm mt-1">{posts.filter(p => p.statut === 'publie').length} posts publiés</p>
+          <p className="text-gray-600 text-sm mt-1">{posts.filter(p => p.statut === 'Publié').length} posts publiés</p>
         </div>
         <div className="flex gap-2">
           <button 
@@ -234,10 +234,10 @@ export default function SocialModule() {
                   </div>
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded">{post.type}</span>
                   <span className={`text-xs px-2 py-1 rounded ${
-                    post.statut === 'publie' ? 'bg-green-100 text-green-800' :
+                    post.statut === 'Publié' ? 'bg-green-100 text-green-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {post.statut === 'publie' ? 'Publié' : 'Brouillon'}
+                    {post.statut === 'Publié' ? 'Publié' : 'Brouillon'}
                   </span>
                 </div>
                 <div className="flex gap-2">
@@ -326,7 +326,8 @@ export default function SocialModule() {
                     <button 
                       onClick={() => {
                         const selectedNetworks = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-                          .map((input: any) => input.parentElement.querySelector('span:last-child').textContent)
+                          .map((input) => (input as HTMLInputElement).parentElement?.querySelector('span:last-child')?.textContent)
+                          .filter((text): text is string => text !== null && text !== undefined)
                         saveAsPost(selectedNetworks)
                       }}
                       className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"

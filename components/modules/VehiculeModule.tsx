@@ -2,24 +2,23 @@
 import { useState, useEffect } from 'react'
 import { useVehicles } from '@/lib/hooks/useVehicles'
 
-interface Vehicule {
-  id: number | string
-  marque: string
-  modele: string
-  annee: number
-  km: number
-  prix: number
-  prix_achat?: number
-  carburant: string
-  images: string[]
-  description: string
-  statut: 'En stock' | 'Réservé' | 'Vendu'
-}
+import { Vehicle } from '@/lib/types'
 
 export default function VehiculeModule() {
   const { vehicles, loading, addVehicle, updateVehicle, deleteVehicle } = useVehicles()
   const [showAddModal, setShowAddModal] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    marque: string
+    modele: string
+    annee: number
+    km: number
+    prix: number
+    prix_achat: number
+    carburant: string
+    images: string[]
+    description: string
+    statut: 'En stock' | 'Réservé' | 'Vendu'
+  }>({
     marque: '',
     modele: '',
     annee: new Date().getFullYear(),
@@ -27,9 +26,9 @@ export default function VehiculeModule() {
     prix: 0,
     prix_achat: 0,
     carburant: 'Essence',
-    images: [] as string[],
+    images: [],
     description: '',
-    statut: 'En stock' as const
+    statut: 'En stock'
   })
   const [imageUrl, setImageUrl] = useState('')
 
@@ -148,7 +147,7 @@ export default function VehiculeModule() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles.map((v: any) => (
+          {vehicles.map((v: Vehicle) => (
             <div key={v.id} className="bg-white rounded-lg shadow-lg hover:shadow-xl transition-all overflow-hidden">
               {v.images.length > 0 ? (
                 <div className="h-48 bg-gray-200 relative">
@@ -189,16 +188,13 @@ export default function VehiculeModule() {
                   <p className="text-green-600 text-2xl font-bold">{v.prix.toLocaleString()}€</p>
                   <div className="grid gap-4">
                     <button 
-                      onClick={() => {
-                        const newStatut = v.statut === 'En stock' ? 'Vendu' : 'En stock'
-                        updateVehicle(v.id, { statut: newStatut })
-                      }}
+                      onClick={() => updateVehicle(v.id!, { statut: v.statut === 'En stock' ? 'Vendu' : 'En stock' })}
                       className="text-blue-600 text-sm hover:underline"
                     >
                       {v.statut === 'En stock' ? 'Marquer vendu' : 'Remettre en stock'}
                     </button>
                     <button 
-                      onClick={() => deleteVehicle(v.id)}
+                      onClick={() => deleteVehicle(v.id!)}
                       className="text-red-600 text-sm hover:underline"
                     >
                       Supprimer
@@ -370,7 +366,7 @@ export default function VehiculeModule() {
                 <label className="block text-sm font-medium mb-1">Statut</label>
                 <select 
                   value={formData.statut}
-                  onChange={(e) => setFormData({...formData, statut: e.target.value as any})}
+                  onChange={(e) => setFormData({...formData, statut: e.target.value as 'En stock' | 'Réservé' | 'Vendu'})}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="En stock">En stock</option>

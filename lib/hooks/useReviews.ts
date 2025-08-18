@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getClientId } from '@/lib/security'
+import { Review } from '@/lib/types'
 
 export function useReviews() {
-  const [reviews, setReviews] = useState<any[]>([])
+  const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export function useReviews() {
     }
   }
 
-  async function addReview(review: any) {
+  async function addReview(review: Review) {
     try {
       const { data, error } = await supabase
         .from('reviews')

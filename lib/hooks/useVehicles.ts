@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getClientId } from '@/lib/security'
+import { Vehicle } from '@/lib/types'
 
 export function useVehicles() {
-  const [vehicles, setVehicles] = useState<any[]>([])
+  const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export function useVehicles() {
     }
   }
 
-  async function addVehicle(vehicle: any) {
+  async function addVehicle(vehicle: Vehicle) {
     try {
       // Préparer les données
       const vehicleData = {
@@ -70,7 +71,7 @@ export function useVehicles() {
     }
   }
 
-  async function updateVehicle(id: string, updates: any) {
+  async function updateVehicle(id: string, updates: Partial<Vehicle>) {
     try {
       const { error } = await supabase
         .from('vehicles')
@@ -83,7 +84,7 @@ export function useVehicles() {
       console.error('Error updating vehicle:', error)
       // Fallback localStorage
       const localVehicules = JSON.parse(localStorage.getItem('garage-vehicules') || '[]')
-      const updated = localVehicules.map((v: any) => v.id === id ? {...v, ...updates} : v)
+      const updated = localVehicules.map((v: Vehicle) => v.id === id ? {...v, ...updates} : v)
       localStorage.setItem('garage-vehicules', JSON.stringify(updated))
       setVehicles(updated)
     }
@@ -102,7 +103,7 @@ export function useVehicles() {
       console.error('Error deleting vehicle:', error)
       // Fallback localStorage
       const localVehicules = JSON.parse(localStorage.getItem('garage-vehicules') || '[]')
-      const updated = localVehicules.filter((v: any) => v.id !== id)
+      const updated = localVehicules.filter((v: Vehicle) => v.id !== id)
       localStorage.setItem('garage-vehicules', JSON.stringify(updated))
       setVehicles(updated)
     }
