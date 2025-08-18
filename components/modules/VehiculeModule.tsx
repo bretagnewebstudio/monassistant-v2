@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useVehicles } from '@/lib/hooks/useVehicles'
 
 import { Vehicle } from '@/lib/types'
