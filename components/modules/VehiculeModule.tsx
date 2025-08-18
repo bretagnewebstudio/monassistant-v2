@@ -397,6 +397,7 @@ export default function VehiculeModule() {
                       annee: new Date().getFullYear(),
                       km: 0,
                       prix: 0,
+                      prix_achat: 0,
                       carburant: 'Essence',
                       images: [],
                       description: '',
