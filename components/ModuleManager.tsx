@@ -1,144 +1,115 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-interface ModuleManagerProps {
-  config: any
-  currentModule: string
-  onModuleChange: (module: string) => void
-  availableModules: any[]
-  onConfigUpdate: (config: any) => void
-}
-
-export default function ModuleManager({ 
-  config, 
-  currentModule, 
-  onModuleChange, 
-  availableModules,
-  onConfigUpdate 
-}: ModuleManagerProps) {
-  const [modules, setModules] = useState({})
-  const [isConfigMode, setIsConfigMode] = useState(false)
+export default function ModuleManager({ config, onConfigUpdate }) {
+  const [availableModules, setAvailableModules] = useState([])
+  const [currentModule, setCurrentModule] = useState('dashboard')
+  const [configMode, setConfigMode] = useState(false)
 
   useEffect(() => {
-    loadModules()
-  }, [config.enabledModules])
+    loadAvailableModules()
+  }, [config])
 
-  const loadModules = async () => {
-    const loadedModules = {}
-    
-    for (const moduleName of config.enabledModules) {
-      try {
-        const ModuleComponent = await import(`../modules/${config.sector}/${moduleName}`)
-        loadedModules[moduleName] = ModuleComponent.default
-      } catch (error) {
-        console.warn(`Module ${moduleName} not found, using generic`)
-        const GenericModule = await import('../modules/generic/default')
-        loadedModules[moduleName] = GenericModule.default
-      }
+  const loadAvailableModules = async () => {
+    try {
+      const response = await fetch(`/api/modules?sector=${config.sector}`)
+      const data = await response.json()
+      setAvailableModules(data.modules || [])
+    } catch (error) {
+      console.error('Erreur chargement modules:', error)
     }
-    
-    setModules(loadedModules)
   }
 
   const addModule = async (moduleName) => {
     const newModules = [...config.enabledModules, moduleName]
-    const newConfig = { ...config, enabledModules: newModules }
-    
-    // Sauvegarder la nouvelle configuration
-    await saveClientConfig(config.id, newConfig)
-    onConfigUpdate(newConfig)
+    await updateClientConfig({ enabledModules: newModules })
   }
 
   const removeModule = async (moduleName) => {
     const newModules = config.enabledModules.filter(m => m !== moduleName)
-    const newConfig = { ...config, enabledModules: newModules }
+    await updateClientConfig({ enabledModules: newModules })
     
-    await saveClientConfig(config.id, newConfig)
-    onConfigUpdate(newConfig)
-    
-    // Si on supprime le module actuel, revenir au dashboard
     if (currentModule === moduleName) {
-      onModuleChange('dashboard')
+      setCurrentModule('dashboard')
     }
   }
 
-  const getModuleIcon = (moduleName) => {
-    const icons = {
-      dashboard: '📊',
-      vehicules: '🚗',
-      services: '🔧',
-      rdv: '📅',
-      produits: '🎴',
-      'avis-vinted': '⭐',
-      actualites: '📰',
-      contact: '💬',
-      menu: '🍽️',
-      reservations: '📅',
-      commandes: '🛒'
+  const updateClientConfig = async (updates) => {
+    try {
+      const response = await fetch('/api/clients', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          site: window.location.search.split('site=')[1]?.split('&')[0] || 'demo',
+          updates 
+        })
+      })
+      
+      if (response.ok) {
+        const newConfig = { ...config, ...updates }
+        onConfigUpdate(newConfig)
+      }
+    } catch (error) {
+      console.error('Erreur mise à jour:', error)
     }
-    return icons[moduleName] || '📋'
   }
 
   return (
-    <div className="admin-interface">
-      {/* Header avec infos client */}
-      <div className="admin-header" style={{ backgroundColor: config.customization.primaryColor }}>
-        <div className="header-content">
-          <h1>{config.businessName}</h1>
-          <div className="header-badges">
-            <span className="sector-badge">{config.sector}</span>
-            <span className="plan-badge">{config.plan}</span>
-            <span className="modules-count">{config.enabledModules.length} modules</span>
-          </div>
-          <div className="header-actions">
-            <button 
-              className={`config-toggle ${isConfigMode ? 'active' : ''}`}
-              onClick={() => setIsConfigMode(!isConfigMode)}
-            >
-              ⚙️ Configuration
-            </button>
-          </div>
+    <div className="module-manager">
+      {/* Header */}
+      <div className="manager-header">
+        <h1>{config.businessName}</h1>
+        <div className="header-actions">
+          <button 
+            className={`config-btn ${configMode ? 'active' : ''}`}
+            onClick={() => setConfigMode(!configMode)}
+          >
+            ⚙️ Configurer Modules
+          </button>
         </div>
       </div>
 
-      <div className="admin-body">
-        {/* Sidebar avec navigation modules */}
-        <div className="admin-sidebar">
-          {isConfigMode && (
+      <div className="manager-body">
+        {/* Sidebar Navigation */}
+        <div className="sidebar">
+          {configMode ? (
+            // Mode Configuration
             <div className="config-panel">
-              <h3>Gestion des Modules</h3>
+              <h3>Configuration des Modules</h3>
               
-              <div className="modules-section">
+              <div className="modules-active">
                 <h4>Modules Actifs ({config.enabledModules.length})</h4>
-                <div className="active-modules">
-                  {config.enabledModules.map(moduleName => (
+                {config.enabledModules.map(moduleName => {
+                  const moduleInfo = availableModules.find(m => m.name === moduleName)
+                  return (
                     <div key={moduleName} className="module-item active">
-                      <span className="module-icon">{getModuleIcon(moduleName)}</span>
+                      <span className="module-icon">{moduleInfo?.icon || '📋'}</span>
                       <span className="module-name">{moduleName}</span>
                       <button 
-                        className="module-remove"
+                        className="remove-btn"
                         onClick={() => removeModule(moduleName)}
                         title="Supprimer ce module"
                       >
                         ×
                       </button>
                     </div>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
 
-              <div className="modules-section">
+              <div className="modules-available">
                 <h4>Modules Disponibles</h4>
-                <div className="available-modules">
-                  {availableModules
-                    .filter(m => !config.enabledModules.includes(m.name))
-                    .map(module => (
+                {availableModules
+                  .filter(m => !config.enabledModules.includes(m.name))
+                  .map(module => (
                     <div key={module.name} className="module-item available">
-                      <span className="module-icon">{getModuleIcon(module.name)}</span>
-                      <span className="module-name">{module.name}</span>
-                      <span className="module-description">{module.description}</span>
+                      <span className="module-icon">{module.icon}</span>
+                      <div className="module-info">
+                        <span className="module-name">{module.name}</span>
+                        <span className="module-desc">{module.description}</span>
+                      </div>
                       <button 
-                        className="module-add"
+                        className="add-btn"
                         onClick={() => addModule(module.name)}
                         title="Ajouter ce module"
                       >
@@ -146,51 +117,44 @@ export default function ModuleManager({
                       </button>
                     </div>
                   ))}
-                </div>
               </div>
             </div>
-          )}
-
-          {!isConfigMode && (
+          ) : (
+            // Mode Navigation normale
             <div className="navigation">
               <div 
                 className={`nav-item ${currentModule === 'dashboard' ? 'active' : ''}`}
-                onClick={() => onModuleChange('dashboard')}
+                onClick={() => setCurrentModule('dashboard')}
               >
                 <span className="nav-icon">📊</span>
                 <span className="nav-text">Tableau de bord</span>
               </div>
               
-              {config.enabledModules.map(moduleName => (
-                <div 
-                  key={moduleName}
-                  className={`nav-item ${currentModule === moduleName ? 'active' : ''}`}
-                  onClick={() => onModuleChange(moduleName)}
-                >
-                  <span className="nav-icon">{getModuleIcon(moduleName)}</span>
-                  <span className="nav-text">{moduleName}</span>
-                </div>
-              ))}
+              {config.enabledModules.map(moduleName => {
+                const moduleInfo = availableModules.find(m => m.name === moduleName)
+                return (
+                  <div 
+                    key={moduleName}
+                    className={`nav-item ${currentModule === moduleName ? 'active' : ''}`}
+                    onClick={() => setCurrentModule(moduleName)}
+                  >
+                    <span className="nav-icon">{moduleInfo?.icon || '📋'}</span>
+                    <span className="nav-text">{moduleName}</span>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
 
-        {/* Contenu principal */}
-        <div className="admin-main">
+        {/* Contenu Principal */}
+        <div className="main-content">
           {currentModule === 'dashboard' && (
-            <DashboardModule config={config} modules={modules} />
+            <DashboardContent config={config} />
           )}
           
-          {currentModule !== 'dashboard' && modules[currentModule] && (
-            <div className="module-content">
-              {React.createElement(modules[currentModule], { config })}
-            </div>
-          )}
-          
-          {currentModule !== 'dashboard' && !modules[currentModule] && (
-            <div className="module-placeholder">
-              <h2>Module {currentModule} en cours de chargement...</h2>
-            </div>
+          {currentModule !== 'dashboard' && (
+            <ModuleContent moduleName={currentModule} config={config} />
           )}
         </div>
       </div>
@@ -198,51 +162,43 @@ export default function ModuleManager({
   )
 }
 
-// Composant Dashboard universel
-function DashboardModule({ config, modules }) {
+// Composant Dashboard
+function DashboardContent({ config }) {
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h2>Tableau de bord - {config.businessName}</h2>
-        <p>Interface d'administration {config.sector}</p>
+        <h2>Tableau de bord</h2>
+        <p>Interface {config.sector} - {config.enabledModules.length} modules actifs</p>
       </div>
       
-      <div className="dashboard-stats">
+      <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-icon">📊</div>
-          <div className="stat-content">
-            <div className="stat-number">{Object.keys(modules).length}</div>
-            <div className="stat-label">Modules actifs</div>
+          <div className="stat-info">
+            <div className="stat-number">{config.enabledModules.length}</div>
+            <div className="stat-label">Modules</div>
           </div>
         </div>
         <div className="stat-card">
           <div className="stat-icon">🎯</div>
-          <div className="stat-content">
+          <div className="stat-info">
             <div className="stat-number">{config.plan}</div>
-            <div className="stat-label">Plan actuel</div>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon">🚀</div>
-          <div className="stat-content">
-            <div className="stat-number">{config.features.length}</div>
-            <div className="stat-label">Fonctionnalités</div>
+            <div className="stat-label">Plan</div>
           </div>
         </div>
       </div>
 
       <div className="quick-actions">
-        <h3>Actions Rapides</h3>
-        <div className="actions-grid">
+        <h3>Modules Actifs</h3>
+        <div className="modules-grid">
           {config.enabledModules.map(moduleName => (
-            <button 
-              key={moduleName}
-              className="quick-action"
-              onClick={() => window.parent.postMessage({ action: 'switchModule', module: moduleName }, '*')}
-            >
-              <span className="action-icon">{getModuleIcon(moduleName)}</span>
-              <span className="action-text">Gérer {moduleName}</span>
-            </button>
+            <div key={moduleName} className="module-card">
+              <div className="module-icon">📋</div>
+              <div className="module-name">{moduleName}</div>
+              <button onClick={() => window.moduleManager?.setCurrentModule(moduleName)}>
+                Ouvrir
+              </button>
+            </div>
           ))}
         </div>
       </div>
@@ -250,17 +206,44 @@ function DashboardModule({ config, modules }) {
   )
 }
 
-// Fonction de sauvegarde configuration
-async function saveClientConfig(clientId, newConfig) {
-  try {
-    const response = await fetch('/api/clients', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId, config: newConfig })
-    })
-    return await response.json()
-  } catch (error) {
-    console.error('Erreur sauvegarde configuration:', error)
-    throw error
-  }
+// Composant pour afficher le contenu d'un module
+function ModuleContent({ moduleName, config }) {
+  return (
+    <div className="module-content">
+      <div className="module-header">
+        <h2>Module : {moduleName}</h2>
+        <p>Configuration {config.sector}</p>
+      </div>
+      
+      <div className="module-body">
+        <div className="module-placeholder">
+          <h3>Module {moduleName}</h3>
+          <p>Interface du module {moduleName} pour {config.businessName}</p>
+          <p>Secteur : {config.sector}</p>
+          
+          {/* Contenu spécifique selon le module */}
+          {moduleName === 'produits' && config.sector === 'collection-pokemon' && (
+            <div className="pokemon-products">
+              <h4>Gestion Produits Pokemon</h4>
+              <button className="btn-primary">+ Ajouter une carte</button>
+              <button className="btn-primary">+ Ajouter une figurine</button>
+              <div className="products-list">
+                <p>Liste des produits Pokemon ici...</p>
+              </div>
+            </div>
+          )}
+          
+          {moduleName === 'vehicules' && config.sector === 'garage' && (
+            <div className="garage-vehicles">
+              <h4>Gestion Véhicules</h4>
+              <button className="btn-primary">+ Nouveau véhicule</button>
+              <div className="vehicles-list">
+                <p>Liste des véhicules ici...</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
